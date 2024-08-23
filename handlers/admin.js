@@ -12,8 +12,8 @@ export async function resetDb(_, res) {
       table.string("title");
       table.string("author");
       table.mediumint("page_count");
-      table.string("description");
-      table.string("text_snippet");
+      table.string("description", 2000);
+      table.string("text_snippet", 2000);
       table.primary(["user_id", "isbn"]);
     });
     res.json({ msg: "db reset successful" });
