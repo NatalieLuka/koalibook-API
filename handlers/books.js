@@ -1,3 +1,4 @@
+import { text } from "express";
 import { config } from "../util/config.js";
 import db from "../util/db.js";
 
@@ -9,7 +10,21 @@ export async function getBooks(req, res) {
     const books = await db(booksTableName).where({
       user_id: userId,
     });
-    return res.json(books);
+    return res.json(
+      books.map((book) => {
+        const {
+          page_count: pageCount,
+          user_id,
+          text_snippet: textSnippet,
+          ...rest
+        } = book;
+        return {
+          ...rest,
+          pageCount,
+          textSnippet,
+        };
+      })
+    );
   } catch (err) {
     console.log(err);
     return res.status(500).json({ msg: "server error" });
@@ -26,7 +41,17 @@ export async function getBook(req, res) {
     if (!book) {
       return res.status(404).json({ msg: "book not found" });
     }
-    return res.json(book);
+    const {
+      page_count: pageCount,
+      user_id,
+      text_snippet: textSnippet,
+      ...rest
+    } = book;
+    return res.json({
+      ...rest,
+      pageCount,
+      textSnippet,
+    });
   } catch (err) {
     console.log(err);
     return res.status(500).json({ msg: "server error" });
@@ -47,7 +72,7 @@ export async function addBook(req, res) {
     }
     const userId = req.auth.claims.sub;
 
-    const newBook = await db(booksTableName).returning("*").insert({
+    const [newBook] = await db(booksTableName).returning("*").insert({
       user_id: userId,
       isbn,
       title,
@@ -56,7 +81,14 @@ export async function addBook(req, res) {
       description,
       text_snippet: textSnippet,
     });
-    return res.json(newBook);
+
+    const { page_count, user_id, text_snippet, ...rest } = newBook;
+
+    return res.json({
+      ...rest,
+      pageCount: page_count,
+      textSnippet: text_snippet,
+    });
   } catch (err) {
     console.log(err);
     return res.status(500).json({ msg: "server error" });

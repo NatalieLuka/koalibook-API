@@ -47,6 +47,7 @@ export async function resetDb(_, res) {
       table.string("isbn");
       table.string("title");
       table.string("author");
+      table.string("image", 2000);
       table.mediumint("page_count");
       table.string("description", 2000);
       table.string("text_snippet", 2000);
