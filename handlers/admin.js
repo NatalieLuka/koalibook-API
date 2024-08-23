@@ -36,7 +36,7 @@ const data = [
     author: "Kylie Scott",
     page_count: 416,
     image:
-      "https://images.thalia.media/00/-/94455079533a4bc1ab1f1361f191f2de/trust-this-love-taschenbuch-kylie-scott.jpeg",
+      "https://images.thalia.media/00/-/c58ae126b56548869d4ca19979d6ef10/trust-epub-kylie-scott.jpeg",
     description:
       "Edie Millen hatte hohe Erwartungen an ihr letztes Highschooljahr - mitten in einen Raubüberfall zu stolpern und beinahe zu sterben, gehörte allerdings nicht dazu. Von einem Moment auf den anderen ändert sich ihr Leben grundlegend. Als ihr die Blicke und das Gerede ihrer Mitschüler zu viel werden, wechselt sie kurzerhand die Schule - nicht ahnend, dass sie dort John Cole wiedersehen würde, den Jungen, der ihr an jenem Abend das Leben rettete. Die wildesten Gerüchte ranken sich um John - er sei gewalttätig und deale mit Drogen. Doch auch wenn Edie weiß, dass sie womöglich ihr Herz aufs Spiel setzt, kann und will sie nicht gegen die Gefühle ankämpfen, die John in ihr hervorruft",
     text_snippet:
