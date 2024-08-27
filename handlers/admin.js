@@ -6,7 +6,7 @@ const data = [
   {
     user_id: "user_2kvS4TlscobKCbSy0eYO4IiAbZE",
     isbn: "9783442495467",
-    title: "City of Heavenly Fire",
+    title: "DEV: City of Heavenly Fire",
     author: "Cassandra Clare",
     page_count: 795,
     image:
@@ -19,7 +19,7 @@ const data = [
   {
     user_id: "user_2kvS4TlscobKCbSy0eYO4IiAbZE",
     isbn: "9783734112737",
-    title: "The Ravenhood - Flock",
+    title: "DEV: The Ravenhood - Flock",
     author: "Kate Stewart",
     page_count: 416,
     image:
@@ -32,7 +32,7 @@ const data = [
   {
     user_id: "user_2kvS4TlscobKCbSy0eYO4IiAbZE",
     isbn: "9783736308077",
-    title: "Trust",
+    title: "DEV:  Trust",
     author: "Kylie Scott",
     page_count: 416,
     image:
