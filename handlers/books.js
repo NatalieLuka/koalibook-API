@@ -6,6 +6,7 @@ const booksTableName = config.DB_TABLE_NAME_PREFIX + "books";
 
 export async function getBooks(req, res) {
   try {
+    console.log(req.auth.claims.sub);
     const userId = req.auth.claims.sub;
     const books = await db(booksTableName).where({
       user_id: userId,
