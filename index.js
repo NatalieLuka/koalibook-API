@@ -23,6 +23,34 @@ app.use("/admin", adminRoutes);
 
 // admin routes
 
+// Body-Parser Middleware, um JSON-Body zu parsen
+
+app.use(express.json());
+
+// Interceptor Middleware für alle Requests
+
+// Interceptor Middleware für alle Requests
+app.use((req, res, next) => {
+  // Logge die Request-Header und Body
+  // console.log("Request Headers:", req.headers);
+  // console.log("Request Body:", req.body);
+
+  // Überschreibe die res.send Methode, um den Response abzufangen
+  const originalSend = res.send;
+
+  // Hook die res.send Funktion
+  res.send = function (body) {
+    // Logge den Response-Body
+    // console.log("Response Body:", body);
+
+    // Rufe die Original send Methode auf
+    return originalSend.apply(this, arguments);
+  };
+
+  // Fahre mit der nächsten Middleware oder Route fort
+  next();
+});
+
 const server = app.listen(PORT, () =>
   console.log(`books api listening on port ${PORT}!`)
 );
