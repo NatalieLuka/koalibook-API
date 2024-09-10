@@ -1,5 +1,12 @@
 import express from "express";
-import { getBooks, getBook, addBook, deleteBook } from "../handlers/books.js";
+import {
+  getBooks,
+  getBook,
+  addBook,
+  deleteBook,
+  getReadingProgress,
+  addReadingProgress,
+} from "../handlers/books.js";
 import { ClerkExpressRequireAuth } from "@clerk/clerk-sdk-node";
 
 const mockRequireAuth = () => {
@@ -13,19 +20,16 @@ const mockRequireAuth = () => {
   };
 };
 
+// const requireAuth = mockRequireAuth;
+const requireAuth = ClerkExpressRequireAuth;
+
 const router = express.Router();
 
-// comment these lines to bypass Clerk authentication
-
-router.get("/", ClerkExpressRequireAuth(), getBooks);
-router.get("/:isbn", ClerkExpressRequireAuth(), getBook);
-router.post("/", ClerkExpressRequireAuth(), addBook);
-router.delete("/:isbn", ClerkExpressRequireAuth(), deleteBook);
-
-// uncomment these lines to bypass Clerk authentication
-
-// router.get("/", mockRequireAuth(), getBooks);
-// router.get("/:isbn", mockRequireAuth(), getBook);
-// router.post("/", mockRequireAuth(), addBook);
+router.get("/", requireAuth(), getBooks);
+router.post("/", requireAuth(), addBook);
+router.get("/:isbn", requireAuth(), getBook);
+router.get("/:isbn/progress", requireAuth(), getReadingProgress);
+router.post("/:isbn/progress", requireAuth(), addReadingProgress);
+router.delete("/:isbn", requireAuth(), deleteBook);
 
 export default router;
