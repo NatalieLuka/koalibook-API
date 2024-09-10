@@ -85,8 +85,11 @@ const data = [
 
 export async function resetDb(_, res) {
   const booksTableName = DB_TABLE_NAME_PREFIX + "books";
+  const progressTableName = DB_TABLE_NAME_PREFIX + "progress";
+  // create and populate books table
   try {
     await db.schema.dropTableIfExists(booksTableName);
+    await db.schema.dropTableIfExists(progressTableName);
     await db.schema.createTable(booksTableName, (table) => {
       table.string("user_id");
       table.string("isbn");
@@ -98,10 +101,34 @@ export async function resetDb(_, res) {
       table.string("text_snippet", 2000);
       table.primary(["user_id", "isbn"]);
     });
-    res.json({ msg: "db reset successful" });
     for (const book of data) {
       await db(booksTableName).insert(book);
     }
+    // create reading progress table
+    await db.schema.createTable(progressTableName, (table) => {
+      table.string("user_id");
+      table.string("isbn");
+      table.date("date").defaultTo(db.fn.now());
+      table.mediumint("current_page");
+      table.primary(["user_id", "isbn", "date"]);
+    });
+    await db(progressTableName)
+      .insert({
+        user_id: "user_2lEmnXO6hxBc59dlVQQKVtIVllt",
+        isbn: "9783736308077",
+        current_page: 45,
+      })
+      .onConflict(["user_id", "isbn", "date"])
+      .merge();
+    await db(progressTableName)
+      .insert({
+        user_id: "user_2lEmnXO6hxBc59dlVQQKVtIVllt",
+        isbn: "9783736308077",
+        current_page: 164,
+      })
+      .onConflict(["user_id", "isbn", "date"])
+      .merge();
+    return res.json({ msg: "db reset successful" });
   } catch (err) {
     console.error(err);
     res.json({

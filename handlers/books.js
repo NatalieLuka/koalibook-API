@@ -1,8 +1,10 @@
 import { text } from "express";
 import { config } from "../util/config.js";
 import db from "../util/db.js";
+import dayjs from "dayjs";
 
 const booksTableName = config.DB_TABLE_NAME_PREFIX + "books";
+const progressTableName = config.DB_TABLE_NAME_PREFIX + "progress";
 
 export async function getBooks(req, res) {
   try {
@@ -124,6 +126,85 @@ export async function deleteBook(req, res) {
     return res.json({
       affectedRows,
     });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ msg: "server error" });
+  }
+}
+
+export async function addReadingProgress(req, res) {
+  try {
+    const userId = req.auth.claims.sub;
+    const { isbn } = req.params;
+    const { newPage, date } = req.body;
+    if (!newPage || isNaN(newPage)) {
+      return res.status(400).json({
+        msg: "newPage is missing or not a number",
+      });
+    }
+    await db(progressTableName)
+      .insert({
+        user_id: userId,
+        isbn,
+        current_page: newPage,
+        date,
+      })
+      .onConflict(["user_id", "isbn", "date"])
+      .merge();
+    return res.json({ msg: "ok" });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ msg: "server error" });
+  }
+}
+export async function getReadingProgress(req, res) {
+  try {
+    const userId = req.auth.claims.sub;
+    const { isbn } = req.params;
+    const rows = await db(progressTableName)
+      .where({
+        user_id: userId,
+        isbn,
+      })
+      .orderBy("date", "desc");
+    const last7Days = [];
+    for (let i = 0; i < 7; i++) {
+      last7Days.push(dayjs().subtract(i, "day").format("YYYY-MM-DD"));
+    }
+    let rowIndex = 0;
+    let currentPage = 0;
+    const mergedArrays = last7Days.map((date) => {
+      if (
+        rowIndex < rows.length &&
+        dayjs(rows[rowIndex].date).isSame(dayjs(date), "day")
+      ) {
+        const { current_page } = rows[rowIndex];
+        rowIndex++;
+        currentPage = rows[rowIndex]?.current_page || 0;
+        return {
+          currentPage: current_page,
+          date,
+          weekday: dayjs(date).format("ddd"),
+        };
+      }
+      return {
+        currentPage,
+        date,
+        weekday: dayjs(date).format("ddd"),
+      };
+    });
+
+    const result = mergedArrays.reverse().map((item, index) => {
+      const { current_page, ...rest } = item;
+      const result = {
+        ...rest,
+        currentPage: item.currentPage || currentPage,
+        pagesRead: item.currentPage ? item.currentPage - currentPage : 0,
+      };
+      currentPage = result.currentPage;
+      return result;
+    });
+    return res.json({ isbn, currentPage, currentWeekProgress: result });
   } catch (err) {
     console.log(err);
     return res.status(500).json({ msg: "server error" });
