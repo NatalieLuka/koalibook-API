@@ -21,7 +21,8 @@ const mockRequireAuth = () => {
 };
 
 // const requireAuth = mockRequireAuth;
-const requireAuth = ClerkExpressRequireAuth;
+const requireAuth =
+  process.env.AUTH === "mock" ? mockRequireAuth : ClerkExpressRequireAuth;
 
 const router = express.Router();
 
