@@ -157,6 +157,47 @@ export async function addReadingProgress(req, res) {
     return res.status(500).json({ msg: "server error" });
   }
 }
+
+function calculateWeeklyProgress(rawProgressRows) {
+  const last7Days = [];
+  for (let i = 0; i < 7; i++) {
+    last7Days.push(dayjs().subtract(i, "day").format("YYYY-MM-DD"));
+  }
+  let rowIndex = 0;
+  let currentPage = 0;
+  const weeklyProgress = last7Days.map((date) => {
+    if (
+      rowIndex < rawProgressRows.length &&
+      dayjs(rawProgressRows[rowIndex].date).isSame(dayjs(date), "day")
+    ) {
+      const { current_page } = rawProgressRows[rowIndex];
+      rowIndex++;
+      currentPage = rawProgressRows[rowIndex]?.current_page || 0;
+      return {
+        currentPage: current_page,
+        date,
+        weekday: dayjs(date).format("ddd"),
+      };
+    }
+    return {
+      currentPage,
+      date,
+      weekday: dayjs(date).format("ddd"),
+    };
+  });
+  const result = weeklyProgress.reverse().map((item) => {
+    const { current_page, ...rest } = item;
+    const r = {
+      ...rest,
+      currentPage: item.currentPage || currentPage,
+      pagesRead: item.currentPage ? item.currentPage - currentPage : 0,
+    };
+    currentPage = r.currentPage;
+    return r;
+  });
+  return { currentPage, weeklyProgress: result };
+}
+
 export async function getReadingProgress(req, res) {
   try {
     const userId = req.auth.claims.sub;
@@ -167,44 +208,21 @@ export async function getReadingProgress(req, res) {
         isbn,
       })
       .orderBy("date", "desc");
-    const last7Days = [];
-    for (let i = 0; i < 7; i++) {
-      last7Days.push(dayjs().subtract(i, "day").format("YYYY-MM-DD"));
-    }
-    let rowIndex = 0;
-    let currentPage = 0;
-    const mergedArrays = last7Days.map((date) => {
-      if (
-        rowIndex < rows.length &&
-        dayjs(rows[rowIndex].date).isSame(dayjs(date), "day")
-      ) {
-        const { current_page } = rows[rowIndex];
-        rowIndex++;
-        currentPage = rows[rowIndex]?.current_page || 0;
-        return {
-          currentPage: current_page,
-          date,
-          weekday: dayjs(date).format("ddd"),
-        };
-      }
-      return {
-        currentPage,
-        date,
-        weekday: dayjs(date).format("ddd"),
-      };
-    });
+    const totalRows = await db(progressTableName)
+      .where({
+        user_id: userId,
+      })
+      .orderBy("date", "desc");
+    let { currentPage, weeklyProgress } = calculateWeeklyProgress(rows);
+    let { currentPage: _, weeklyProgress: totalWeekProgress } =
+      calculateWeeklyProgress(totalRows);
 
-    const result = mergedArrays.reverse().map((item, index) => {
-      const { current_page, ...rest } = item;
-      const result = {
-        ...rest,
-        currentPage: item.currentPage || currentPage,
-        pagesRead: item.currentPage ? item.currentPage - currentPage : 0,
-      };
-      currentPage = result.currentPage;
-      return result;
+    return res.json({
+      isbn,
+      currentPage,
+      currentWeekProgress: weeklyProgress,
+      totalWeekProgress,
     });
-    return res.json({ isbn, currentPage, currentWeekProgress: result });
   } catch (err) {
     console.log(err);
     return res.status(500).json({ msg: "server error" });
