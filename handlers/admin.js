@@ -114,17 +114,46 @@ export async function resetDb(_, res) {
     });
     await db(progressTableName)
       .insert({
-        user_id: "user_2lEmnXO6hxBc59dlVQQKVtIVllt",
+        user_id: "user_2kvS4TlscobKCbSy0eYO4IiAbZE",
         isbn: "9783736308077",
-        current_page: 45,
+        current_page: 10,
+        date: "2024-09-12",
       })
       .onConflict(["user_id", "isbn", "date"])
       .merge();
     await db(progressTableName)
       .insert({
-        user_id: "user_2lEmnXO6hxBc59dlVQQKVtIVllt",
+        user_id: "user_2kvS4TlscobKCbSy0eYO4IiAbZE",
         isbn: "9783736308077",
-        current_page: 164,
+        current_page: 20,
+        date: "2024-09-13",
+      })
+      .onConflict(["user_id", "isbn", "date"])
+      .merge();
+    await db(progressTableName)
+      .insert({
+        user_id: "user_2kvS4TlscobKCbSy0eYO4IiAbZE",
+        isbn: "9783734112737",
+        current_page: 30,
+        date: "2024-09-01",
+      })
+      .onConflict(["user_id", "isbn", "date"])
+      .merge();
+    await db(progressTableName)
+      .insert({
+        user_id: "user_2kvS4TlscobKCbSy0eYO4IiAbZE",
+        isbn: "9783734112737",
+        date: "2024-09-10",
+        current_page: 35,
+      })
+      .onConflict(["user_id", "isbn", "date"])
+      .merge();
+    await db(progressTableName)
+      .insert({
+        user_id: "user_2kvS4TlscobKCbSy0eYO4IiAbZE",
+        isbn: "9783734112737",
+        current_page: 40,
+        date: "2024-09-13",
       })
       .onConflict(["user_id", "isbn", "date"])
       .merge();

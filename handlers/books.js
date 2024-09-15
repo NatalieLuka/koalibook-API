@@ -160,68 +160,105 @@ export async function addReadingProgress(req, res) {
 
 function calculateWeeklyProgress(rawProgressRows) {
   const last7Days = [];
-  for (let i = 0; i < 7; i++) {
+  for (let i = 6; i >= 0; i--) {
     last7Days.push(dayjs().subtract(i, "day").format("YYYY-MM-DD"));
   }
+
+  console.log("rawProgressRows", rawProgressRows);
+
+  const rowsAfter = [];
+  let pageBefore = 0;
+  for (let row of rawProgressRows) {
+    console.log("comp:", row.date, last7Days[0]);
+    if (dayjs(row.date).isBefore(dayjs(last7Days[0]))) {
+      pageBefore = row.current_page;
+    } else {
+      rowsAfter.push(row);
+    }
+  }
+
+  console.log("rowsAfter", rowsAfter);
+
   let rowIndex = 0;
-  let currentPage = 0;
+  let currentPage = pageBefore || 0;
+  console.log("currentPage", currentPage);
+
   const weeklyProgress = last7Days.map((date) => {
-    if (
-      rowIndex < rawProgressRows.length &&
-      dayjs(rawProgressRows[rowIndex].date).isSame(dayjs(date), "day")
-    ) {
-      const { current_page } = rawProgressRows[rowIndex];
-      rowIndex++;
-      currentPage = rawProgressRows[rowIndex]?.current_page || 0;
-      return {
-        currentPage: current_page,
-        date,
-        weekday: dayjs(date).format("ddd"),
-      };
+    let pagesRead = 0;
+    if (rowIndex < rowsAfter.length) {
+      const match = dayjs(rowsAfter[rowIndex].date).isSame(dayjs(date), "day");
+      if (match) {
+        pagesRead = rowsAfter[rowIndex].current_page - currentPage;
+        currentPage = rowsAfter[rowIndex].current_page;
+        rowIndex++;
+      }
     }
     return {
       currentPage,
+      pagesRead,
       date,
       weekday: dayjs(date).format("ddd"),
     };
   });
-  const result = weeklyProgress.reverse().map((item) => {
-    const { current_page, ...rest } = item;
-    const r = {
-      ...rest,
-      currentPage: item.currentPage || currentPage,
-      pagesRead: item.currentPage ? item.currentPage - currentPage : 0,
-    };
-    currentPage = r.currentPage;
-    return r;
-  });
-  return { currentPage, weeklyProgress: result };
+
+  return { currentPage, weeklyProgress };
 }
 
 export async function getReadingProgress(req, res) {
   try {
     const userId = req.auth.claims.sub;
+    console.log(userId);
     const { isbn } = req.params;
     const rows = await db(progressTableName)
       .where({
         user_id: userId,
         isbn,
       })
-      .orderBy("date", "desc");
+      .orderBy(["date"], "asc");
     const totalRows = await db(progressTableName)
       .where({
         user_id: userId,
       })
-      .orderBy("date", "desc");
-    let { currentPage, weeklyProgress } = calculateWeeklyProgress(rows);
-    let { currentPage: _, weeklyProgress: totalWeekProgress } =
-      calculateWeeklyProgress(totalRows);
+      .orderBy(["isbn", "date"], "asc");
+    const { currentPage, weeklyProgress } = calculateWeeklyProgress(rows);
+
+    const groupedTotalRows = totalRows.reduce((acc, cur) => {
+      if (!acc[cur.isbn]) {
+        return {
+          ...acc,
+          [cur.isbn]: [cur],
+        };
+      } else {
+        return { ...acc, [cur.isbn]: [...acc[cur.isbn], cur] };
+      }
+    }, {});
+
+    console.log(groupedTotalRows);
+    const groupedWeeklyResults = [];
+
+    for (const key of Object.keys(groupedTotalRows)) {
+      groupedWeeklyResults.push(calculateWeeklyProgress(groupedTotalRows[key]));
+    }
+
+    console.log(JSON.stringify(groupedWeeklyResults));
+    const totals = groupedWeeklyResults[0]?.weeklyProgress.slice() || [];
+    for (let i = 1; i < groupedWeeklyResults.length; i++) {
+      for (let j = 0; j < groupedWeeklyResults[i].weeklyProgress.length; j++) {
+        totals[j].pagesRead +=
+          groupedWeeklyResults[i].weeklyProgress[j].pagesRead;
+      }
+    }
 
     return res.json({
       isbn,
       currentPage,
       currentWeekProgress: weeklyProgress,
-      totalWeekProgress,
+      totals: totals.map((item) => {
+        const { currentPage, ...rest } = item;
+        return {
+          ...rest,
+        };
+      }),
     });
   } catch (err) {
     console.log(err);
